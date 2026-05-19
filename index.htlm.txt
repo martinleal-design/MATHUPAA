@@ -1,0 +1,1225 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MATHUP - Preparación PAES Matemática</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;900&display=swap" rel="stylesheet">
+    
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 500px;
+            margin: 0 auto;
+            height: 300px;
+            max-height: 400px;
+        }
+        @media (min-width: 768px) { .chart-container { height: 350px; } }
+        .hide-scroll::-webkit-scrollbar { display: none; }
+        .hide-scroll { -ms-overflow-style: none; scrollbar-width: none; }
+        
+        .fade-in { animation: fadeIn 0.4s ease-in-out forwards; }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Utilidad para SVGs dinámicos */
+        .math-svg-container svg { width: 100%; height: auto; max-width: 300px; margin: 0 auto; display: block; }
+    </style>
+</head>
+<body class="bg-[#FAF8F5] text-stone-800 antialiased flex flex-col min-h-screen">
+
+    <nav class="bg-white shadow-sm sticky top-0 z-50">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <!-- LOGO CUSTOM: Puedes reemplazar todo este div por tu imagen, por ejemplo: -->
+                <!-- <img src="ruta/a/tu/logo.png" alt="MathUp Logo" class="h-10 cursor-pointer" onclick="app.navigate('home')"> -->
+                <div class="flex items-center cursor-pointer logo-container" onclick="app.navigate('home')">
+                    <span class="text-2xl mr-2 text-teal-600">&#x221E;</span>
+                    <span class="font-black text-xl tracking-tight text-stone-900">MATH<span class="text-teal-600">UP</span></span>
+                </div>
+                <div class="flex items-center space-x-1 sm:space-x-2 overflow-x-auto hide-scroll">
+                    <button onclick="app.navigate('home')" id="nav-home" class="nav-btn px-3 py-2 rounded-lg text-sm font-bold text-teal-700 bg-teal-50 transition-colors">Inicio</button>
+                    <button onclick="app.checkPremiumAccess('practica')" id="nav-practica" class="nav-btn px-3 py-2 rounded-lg text-sm font-medium text-stone-500 hover:text-stone-900 transition-colors flex items-center">
+                        <span class="mr-1">&#x1F512;</span> Práctica (Premium)
+                    </button>
+                    <button onclick="app.checkPremiumAccess('perfil')" id="nav-perfil" class="hidden nav-btn px-3 py-2 rounded-lg text-sm font-medium text-stone-500 hover:text-stone-900 transition-colors flex items-center">
+                        Mi Perfil
+                    </button>
+                    <button onclick="app.navigate('visualizador')" id="nav-visualizador" class="nav-btn px-3 py-2 rounded-lg text-sm font-medium text-stone-500 hover:text-stone-900 transition-colors flex items-center"><span class="mr-1">&#x1F4D0;</span> Laboratorio Visual</button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="flex-grow w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        
+        <div id="login-modal" class="hidden fixed inset-0 bg-stone-900/80 backdrop-blur-sm z-[100] flex items-center justify-center fade-in px-4">
+            <div class="bg-white rounded-3xl p-8 max-w-md w-full shadow-2xl relative border border-stone-200">
+                <button onclick="app.closeLoginModal()" class="absolute top-4 right-5 text-stone-400 hover:text-stone-700 text-3xl leading-none">&times;</button>
+                <div class="text-center mb-6">
+                    <span class="text-5xl inline-block mb-3">&#x1F680;</span>
+                    <h3 class="text-2xl font-black text-stone-900">Acceso Premium</h3>
+                    <p class="text-stone-500 text-sm mt-2">Ingresa el correo con el que adquiriste tu plan para desbloquear simuladores infinitos y el historial de progreso.</p>
+                </div>
+                
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-bold text-stone-700 mb-2">Correo Electrónico</label>
+                        <input type="email" id="login-email" placeholder="alumno@mathup.cl" class="w-full border-stone-300 rounded-xl p-3 focus:ring-2 focus:ring-teal-500 focus:border-teal-500 border bg-stone-50 outline-none transition-shadow font-medium">
+                    </div>
+                    <p id="login-error" class="text-red-500 text-sm hidden font-bold bg-red-50 p-3 rounded-lg">❌ Correo no registrado. Intenta con 'alumno@mathup.cl' para probar.</p>
+                    <button onclick="app.verifyEmail()" class="w-full bg-stone-900 hover:bg-black text-white font-bold py-3.5 rounded-xl shadow-md transition-all transform hover:-translate-y-0.5">Ingresar</button>
+                </div>
+            </div>
+        </div>
+
+        <section id="view-home" class="view-section fade-in">
+            <div class="text-center mb-16 mt-6">
+                <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-teal-50 text-teal-700 font-bold text-sm mb-6 border border-teal-100">
+                    <span class="w-2 h-2 rounded-full bg-teal-500 animate-pulse"></span>
+                    Actualizado PAES Admisión 2026
+                </div>
+                <h1 class="text-4xl sm:text-5xl md:text-6xl font-black text-stone-900 mb-6 tracking-tight leading-tight">Domina la PAES con <br class="hidden sm:block"><span class="text-teal-600">Aprendizaje Inteligente</span></h1>
+                <p class="text-lg md:text-xl text-stone-600 max-w-3xl mx-auto leading-relaxed">
+                    MATHUP no es solo ensayos. Es un ecosistema con <strong>miles de ejercicios contextuales dinámicos</strong> clasificados por dificultad, gráficos interactivos SVG y un motor estadístico que analiza tus fallas.
+                </p>
+                <div class="mt-10 flex flex-col sm:flex-row justify-center items-center gap-4">
+                    <button onclick="app.checkPremiumAccess('practica')" class="bg-teal-600 hover:bg-teal-700 text-white font-bold text-lg py-4 px-10 rounded-full shadow-xl shadow-teal-600/20 transition-all transform hover:scale-105 flex items-center w-full sm:w-auto justify-center">
+                        ¡Empieza YA! <span class="ml-2">&#x1F680;</span>
+                    </button>
+                    <button onclick="app.navigate('visualizador')" class="bg-white border-2 border-stone-200 hover:border-stone-900 text-stone-900 font-bold py-4 px-8 rounded-full shadow-sm transition-colors flex items-center w-full sm:w-auto justify-center">
+                        Laboratorio Visual <span class="ml-2">&#x1F3A8;</span>
+                    </button>
+                </div>
+            </div>
+
+            <div class="mb-8 mt-12 text-center md:text-left">
+                <h2 class="text-2xl font-black text-stone-800 border-b-2 border-stone-100 pb-3 mb-4 inline-block md:block">Composición de la Prueba M1</h2>
+                <p class="text-stone-600 mb-6">Conoce cómo se distribuyen las preguntas oficiales según el DEMRE para enfocar tu estudio eficientemente.</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 items-center bg-white p-8 rounded-3xl shadow-sm border border-stone-200">
+                <div class="order-2 md:order-1">
+                    <ul class="space-y-5">
+                        <li class="flex items-start">
+                            <span class="w-5 h-5 rounded-md bg-[#14b8a6] mt-1 mr-4 flex-shrink-0"></span>
+                            <div><strong class="block text-stone-900 text-lg">Números (18%)</strong><span class="text-sm text-stone-500">Porcentajes, fracciones, proporcionalidad. Base de la prueba.</span></div>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="w-5 h-5 rounded-md bg-[#0f766e] mt-1 mr-4 flex-shrink-0"></span>
+                            <div><strong class="block text-stone-900 text-lg">Álgebra y Funciones (36%)</strong><span class="text-sm text-stone-500">Ecuaciones, sistemas, modelos lineales. El eje con mayor peso.</span></div>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="w-5 h-5 rounded-md bg-[#fbbf24] mt-1 mr-4 flex-shrink-0"></span>
+                            <div><strong class="block text-stone-900 text-lg">Geometría (24%)</strong><span class="text-sm text-stone-500">Áreas, perímetros, Pitágoras, isometría. Enfocado en modelos reales.</span></div>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="w-5 h-5 rounded-md bg-[#f59e0b] mt-1 mr-4 flex-shrink-0"></span>
+                            <div><strong class="block text-stone-900 text-lg">Probabilidad y Estadística (22%)</strong><span class="text-sm text-stone-500">Lectura de gráficos, promedios, reglas de azar (Laplace).</span></div>
+                        </li>
+                    </ul>
+                </div>
+                <div class="order-1 md:order-2 flex justify-center">
+                    <div class="chart-container">
+                        <canvas id="m1DistributionChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="view-practica" class="view-section hidden fade-in">
+            
+            <div id="practica-dashboard">
+                <div class="mb-10">
+                    <h2 class="text-3xl font-black text-stone-900 mb-3">Configuración del Ensayo</h2>
+                    <p class="text-stone-600">Nuestros ejercicios están modelados basados en las pruebas PAES 2020-2024. Sigue los pasos para armar tu prueba.</p>
+                </div>
+
+                <!-- Paso 1: Prueba -->
+                <div class="mb-8 bg-white p-6 md:p-8 rounded-3xl border border-stone-200 shadow-sm">
+                    <div class="flex items-center gap-3 mb-6">
+                        <div class="w-8 h-8 rounded-full bg-stone-900 text-white font-bold flex items-center justify-center">1</div>
+                        <h3 class="text-xl font-bold text-stone-800">Selecciona la Prueba</h3>
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <button onclick="app.selectExam('M1')" id="btn-sel-m1" class="border-2 border-stone-200 bg-stone-50 hover:border-teal-500 rounded-2xl p-5 text-left transition-all">
+                            <span class="block text-2xl font-black text-stone-800 mb-1">M1 Obligatoria</span>
+                            <span class="block text-stone-500 text-sm">Competencia Matemática 1 (General)</span>
+                        </button>
+                        <button onclick="app.selectExam('M2')" id="btn-sel-m2" class="border-2 border-stone-200 bg-stone-50 hover:border-teal-500 rounded-2xl p-5 text-left transition-all">
+                            <span class="block text-2xl font-black text-stone-800 mb-1">M2 Electiva</span>
+                            <span class="block text-stone-500 text-sm">Competencia Matemática 2 (Profundización)</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Paso 2: Dificultad -->
+                <div id="practica-dificultad" class="mb-8 bg-white p-6 md:p-8 rounded-3xl border border-stone-200 shadow-sm hidden opacity-0 transition-opacity duration-500">
+                    <div class="flex items-center gap-3 mb-6">
+                        <div class="w-8 h-8 rounded-full bg-stone-900 text-white font-bold flex items-center justify-center">2</div>
+                        <h3 class="text-xl font-bold text-stone-800">Selecciona la Dificultad</h3>
+                    </div>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <button onclick="app.selectDifficulty('all')" id="btn-dif-all" class="dif-btn border-2 border-stone-200 bg-white rounded-xl p-4 text-center font-bold text-stone-700 hover:border-teal-500 transition-colors">Mixta</button>
+                        <button onclick="app.selectDifficulty('Fácil')" id="btn-dif-facil" class="dif-btn border-2 border-stone-200 bg-white rounded-xl p-4 text-center font-bold text-stone-700 hover:border-green-500 transition-colors">Fácil</button>
+                        <button onclick="app.selectDifficulty('Medio')" id="btn-dif-medio" class="dif-btn border-2 border-stone-200 bg-white rounded-xl p-4 text-center font-bold text-stone-700 hover:border-amber-500 transition-colors">Medio</button>
+                        <button onclick="app.selectDifficulty('Difícil')" id="btn-dif-dificil" class="dif-btn border-2 border-stone-200 bg-white rounded-xl p-4 text-center font-bold text-stone-700 hover:border-red-500 transition-colors">Difícil</button>
+                    </div>
+                </div>
+
+                <!-- Paso 3: Modalidad / Iniciar -->
+                <div id="practica-modalidad" class="bg-white p-6 md:p-8 rounded-3xl border border-stone-200 shadow-sm hidden opacity-0 transition-opacity duration-500">
+                    <div class="flex items-center gap-3 mb-6">
+                        <div class="w-8 h-8 rounded-full bg-stone-900 text-white font-bold flex items-center justify-center">3</div>
+                        <h3 class="text-xl font-bold text-stone-800">Inicia tu Sesión</h3>
+                    </div>
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        <button onclick="app.startQuiz('all')" class="lg:col-span-1 bg-teal-600 hover:bg-teal-700 text-white rounded-2xl p-6 text-left transition-all shadow-lg flex flex-col justify-between">
+                            <div>
+                                <h4 class="text-2xl font-black mb-2">Ensayo Mixto (20 hojas)</h4>
+                                <p class="text-teal-100 text-sm leading-relaxed mb-4">Simula una prueba real combinando todos los ejes temáticos.</p>
+                            </div>
+                            <span class="inline-block bg-teal-800 text-white font-bold text-xs px-3 py-2 rounded-lg text-center">¡INICIAR ENSAYO! &rarr;</span>
+                        </button>
+
+                        <div class="lg:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <button onclick="app.startQuiz('Números')" class="bg-stone-50 border border-stone-200 hover:border-teal-400 rounded-2xl p-5 text-left transition-all">
+                                <span class="block font-bold text-stone-800 text-lg mb-1">Solo Números</span>
+                                <span class="block text-stone-500 text-sm">20 ej. de este eje.</span>
+                            </button>
+                            <button onclick="app.startQuiz('Álgebra y Funciones')" class="bg-stone-50 border border-stone-200 hover:border-teal-400 rounded-2xl p-5 text-left transition-all">
+                                <span class="block font-bold text-stone-800 text-lg mb-1">Solo Álgebra</span>
+                                <span class="block text-stone-500 text-sm">20 ej. de este eje.</span>
+                            </button>
+                            <button onclick="app.startQuiz('Geometría')" class="bg-stone-50 border border-stone-200 hover:border-teal-400 rounded-2xl p-5 text-left transition-all">
+                                <span class="block font-bold text-stone-800 text-lg mb-1">Solo Geometría</span>
+                                <span class="block text-stone-500 text-sm">20 ej. de este eje.</span>
+                            </button>
+                            <button onclick="app.startQuiz('Probabilidad y Estadística')" class="bg-stone-50 border border-stone-200 hover:border-teal-400 rounded-2xl p-5 text-left transition-all">
+                                <span class="block font-bold text-stone-800 text-lg mb-1">Solo Prob. y Est.</span>
+                                <span class="block text-stone-500 text-sm">20 ej. de este eje.</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="practica-quiz" class="hidden flex-col bg-white border border-stone-200 rounded-3xl shadow-lg min-h-[600px] overflow-hidden fade-in">
+                
+                <div class="bg-stone-50 border-b border-stone-200 p-4 md:px-8 flex justify-between items-center">
+                    <button onclick="app.exitQuiz()" class="text-stone-500 hover:text-red-600 font-bold text-sm flex items-center transition-colors px-3 py-1.5 rounded-md hover:bg-red-50">
+                        &times; Salir
+                    </button>
+                    <div class="text-center">
+                        <span id="quiz-header-title" class="block font-black text-stone-800 tracking-wide uppercase text-sm">ENSAYO</span>
+                        <span id="quiz-header-progress" class="block text-stone-500 text-xs font-bold">Hoja 1 de 20</span>
+                    </div>
+                    <div class="w-20 text-right">
+                        <span class="inline-block bg-teal-100 text-teal-800 text-xs font-bold px-2 py-1 rounded" id="quiz-difficulty-badge">Medio</span>
+                    </div>
+                </div>
+
+                <div class="w-full bg-stone-100 h-2">
+                    <div id="quiz-progress-bar" class="bg-teal-500 h-2 transition-all duration-300 ease-out" style="width: 5%"></div>
+                </div>
+
+                <div class="flex-grow p-6 md:p-10 flex flex-col" id="quiz-question-container">
+                    <!-- Dinámico -->
+                </div>
+
+                <div class="bg-stone-50 border-t border-stone-200 p-4 md:px-8 md:py-5 flex justify-between items-center">
+                    <button id="btn-quiz-prev" onclick="app.prevQuestion()" class="px-5 py-3 rounded-xl font-bold text-stone-600 bg-white border border-stone-200 hover:bg-stone-100 transition-colors disabled:opacity-30 disabled:cursor-not-allowed shadow-sm">
+                        &larr; Anterior
+                    </button>
+                    <button id="btn-quiz-next" onclick="app.nextQuestion()" class="px-8 py-3 rounded-xl font-bold text-white bg-teal-600 hover:bg-teal-700 transition-colors shadow-md">
+                        Siguiente &rarr;
+                    </button>
+                    <button id="btn-quiz-finish" onclick="app.finishQuiz()" class="hidden px-8 py-3 rounded-xl font-bold text-white bg-stone-900 hover:bg-black transition-colors shadow-md">
+                        Finalizar y Revisar
+                    </button>
+                </div>
+            </div>
+
+            <div id="practica-results" class="hidden bg-white p-8 md:p-12 rounded-3xl shadow-lg border border-stone-200 text-center fade-in mt-4">
+                <div class="inline-flex items-center justify-center w-24 h-24 bg-stone-900 text-white rounded-2xl text-5xl mb-6 shadow-lg shadow-stone-900/20 transform rotate-3">
+                    &#x1F4DD;
+                </div>
+                <h2 class="text-3xl md:text-5xl font-black text-stone-900 mb-3">Ensayo Finalizado</h2>
+                <p class="text-lg text-stone-600 mb-8 max-w-lg mx-auto">Tu IA ha evaluado tus respuestas. Revisa tus resultados y comprende tus errores.</p>
+                
+                <div class="flex justify-center gap-4 mb-10">
+                    <div class="bg-teal-50 border border-teal-100 rounded-2xl p-6 min-w-[150px]">
+                        <div class="text-xs text-teal-800 uppercase font-black tracking-wider mb-1">Aciertos</div>
+                        <div class="text-5xl font-black text-teal-600" id="result-score-correct">0</div>
+                    </div>
+                    <div class="bg-red-50 border border-red-100 rounded-2xl p-6 min-w-[150px]">
+                        <div class="text-xs text-red-800 uppercase font-black tracking-wider mb-1">Errores / Omitidas</div>
+                        <div class="text-5xl font-black text-red-500" id="result-score-wrong">0</div>
+                    </div>
+                </div>
+
+                <div id="quiz-review-container" class="mt-8 mb-12 text-left space-y-8 max-w-4xl mx-auto hidden">
+                    <!-- Review dinámico -->
+                </div>
+
+                <div>
+                    <button onclick="app.exitQuiz()" class="bg-stone-900 hover:bg-black text-white font-bold py-4 px-10 rounded-xl transition-all shadow-md">
+                        Volver al Menú
+                    </button>
+                </div>
+            </div>
+
+        </section>
+
+        <section id="view-perfil" class="view-section hidden fade-in">
+            <div class="mb-10">
+                <h2 class="text-3xl font-black text-stone-900 mb-2">Mi Progreso</h2>
+                <p class="text-stone-600">Estadísticas calculadas en base a tu rendimiento en la plataforma.</p>
+            </div>
+
+            <div class="bg-white p-8 rounded-3xl shadow-sm border border-stone-200 mb-8 flex flex-col sm:flex-row items-center sm:justify-start text-center sm:text-left">
+                <div class="w-20 h-20 bg-stone-900 text-white rounded-2xl flex items-center justify-center text-4xl font-bold mb-4 sm:mb-0 sm:mr-6 transform -rotate-3">
+                    &#x1F393;
+                </div>
+                <div>
+                    <h3 class="text-2xl font-black text-stone-800" id="profile-email">Cargando...</h3>
+                    <p class="text-teal-600 font-bold text-sm tracking-wide uppercase mt-1">&#x2728; Pase Libre Activo</p>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                <div class="bg-white rounded-3xl shadow-sm border border-stone-200 p-8 flex flex-col items-center justify-center text-center">
+                    <span class="text-stone-400 text-xs font-black uppercase tracking-widest mb-2">Ejercicios Realizados</span>
+                    <span class="text-5xl font-black text-stone-900" id="stat-solved">0</span>
+                </div>
+                
+                <div class="bg-teal-50 rounded-3xl border border-teal-100 p-8 flex flex-col items-center justify-center text-center">
+                    <span class="text-teal-700 text-xs font-black uppercase tracking-widest mb-2">Respuestas Correctas</span>
+                    <span class="text-5xl font-black text-teal-600" id="stat-correct">0</span>
+                </div>
+
+                <div class="bg-stone-900 rounded-3xl p-8 flex flex-col items-center justify-center text-center text-white">
+                    <span class="text-stone-400 text-xs font-black uppercase tracking-widest mb-2">Precisión Global</span>
+                    <span class="text-5xl font-black text-white" id="stat-accuracy">0%</span>
+                </div>
+
+                <div class="bg-white rounded-3xl shadow-sm border border-stone-200 p-8 flex flex-col items-center justify-center text-center">
+                    <span class="text-stone-400 text-xs font-black uppercase tracking-widest mb-2">Tiempo de Estudio</span>
+                    <span class="text-4xl font-black text-stone-800" id="stat-time">0m</span>
+                </div>
+            </div>
+        </section>
+
+        <section id="view-visualizador" class="view-section hidden fade-in">
+            <div class="mb-10">
+                <h2 class="text-3xl font-black text-stone-900 flex items-center mb-2"><span class="mr-3 text-4xl">&#x1F3A8;</span> Laboratorio Visual</h2>
+                <p class="text-stone-600 text-lg">La mejor forma de aprender matemáticas es visualizándolas. Interactúa con las herramientas.</p>
+            </div>
+
+            <div class="space-y-8">
+                
+                <!-- Teorema de Pitágoras (SVG Dinámico) -->
+                <div class="bg-white rounded-3xl p-8 shadow-sm border border-stone-200">
+                    <div class="flex items-center gap-3 mb-6">
+                        <span class="text-2xl bg-teal-50 text-teal-600 p-2 rounded-xl">&#x25E2;</span>
+                        <h3 class="text-2xl font-bold text-stone-800">Teorema de Pitágoras</h3>
+                    </div>
+                    
+                    <div class="flex flex-col md:flex-row gap-10 items-center">
+                        <div class="w-full md:w-1/2 space-y-6">
+                            <p class="text-stone-500 text-sm">Modifica los catetos para ver cómo cambia la hipotenusa en tiempo real. Fundamental para Geometría M1.</p>
+                            
+                            <div class="bg-stone-50 p-6 rounded-2xl border border-stone-200">
+                                <div class="mb-5">
+                                    <div class="flex justify-between mb-2 text-sm font-bold text-stone-700"><span>Cateto A (Base)</span> <span id="val-cata" class="text-teal-600 text-lg">3</span></div>
+                                    <input type="range" id="slider-cata" min="1" max="15" step="1" value="3" class="w-full h-2 bg-stone-300 rounded-lg appearance-none cursor-pointer accent-teal-600" oninput="app.updatePythagoras()">
+                                </div>
+                                <div>
+                                    <div class="flex justify-between mb-2 text-sm font-bold text-stone-700"><span>Cateto B (Altura)</span> <span id="val-catb" class="text-teal-600 text-lg">4</span></div>
+                                    <input type="range" id="slider-catb" min="1" max="15" step="1" value="4" class="w-full h-2 bg-stone-300 rounded-lg appearance-none cursor-pointer accent-teal-600" oninput="app.updatePythagoras()">
+                                </div>
+                            </div>
+                            
+                            <div class="bg-stone-900 p-5 rounded-2xl text-center text-white">
+                                <span class="block text-xs text-stone-400 font-bold mb-1 tracking-widest uppercase">Ecuación: C² = A² + B²</span>
+                                <span class="text-2xl font-black">Hipotenusa (C) = <span id="val-hyp" class="text-teal-400">5.00</span></span>
+                            </div>
+                        </div>
+                        <div class="w-full md:w-1/2 flex justify-center bg-stone-50 p-6 rounded-3xl border border-stone-200 min-h-[300px] items-center">
+                            <svg id="svg-triangle" width="100%" height="250" viewBox="0 -20 140 140" class="overflow-visible">
+                                <!-- Dibujado vía JS -->
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <!-- Fracciones -->
+                    <div class="bg-white rounded-3xl p-8 shadow-sm border border-stone-200">
+                        <h3 class="text-xl font-bold mb-2 text-stone-800">Composición de Fracciones</h3>
+                        <p class="text-stone-500 text-sm mb-6">Base para Números M1.</p>
+                        
+                        <div class="flex gap-4 items-center mb-6">
+                            <div class="w-1/2">
+                                <label class="block text-xs font-bold text-stone-500 uppercase mb-2">Numerador</label>
+                                <input type="range" id="slider-num" min="0" max="12" step="1" value="3" class="w-full h-2 bg-stone-200 rounded-lg appearance-none cursor-pointer accent-teal-600" oninput="app.updateFraction()">
+                            </div>
+                            <div class="w-1/2">
+                                <label class="block text-xs font-bold text-stone-500 uppercase mb-2">Denominador</label>
+                                <input type="range" id="slider-den" min="1" max="10" step="1" value="5" class="w-full h-2 bg-stone-200 rounded-lg appearance-none cursor-pointer accent-teal-600" oninput="app.updateFraction()">
+                            </div>
+                        </div>
+                        
+                        <div class="flex items-center justify-center space-x-8 bg-stone-50 p-6 rounded-2xl border border-stone-200">
+                            <div class="text-5xl font-black text-stone-800 flex flex-col items-center">
+                                <span id="frac-num" class="text-teal-600">3</span>
+                                <div class="w-16 h-1.5 bg-stone-800 my-1 rounded-full"></div>
+                                <span id="frac-den">5</span>
+                            </div>
+                            <div id="fraction-blocks" class="flex flex-wrap gap-1">
+                                <!-- Generado por JS -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tabla Trigo -->
+                    <div class="bg-white rounded-3xl p-8 shadow-sm border border-stone-200">
+                        <h3 class="text-xl font-bold mb-4 text-stone-800">Trigonometría Básica (M2)</h3>
+                        <div class="overflow-x-auto rounded-xl border border-stone-200">
+                            <table class="w-full text-center text-sm text-stone-700 font-medium">
+                                <thead class="text-xs text-stone-500 uppercase bg-stone-50 border-b border-stone-200 font-black">
+                                    <tr>
+                                        <th class="px-3 py-4 border-r border-stone-200">Ángulo</th>
+                                        <th class="px-3 py-4 border-r border-stone-200">30°</th>
+                                        <th class="px-3 py-4 border-r border-stone-200">45°</th>
+                                        <th class="px-3 py-4">60°</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr class="border-b border-stone-200">
+                                        <td class="px-3 py-4 font-bold bg-stone-50 border-r border-stone-200">sen(α)</td>
+                                        <td class="px-3 py-4 border-r border-stone-200">1/2</td><td class="px-3 py-4 border-r border-stone-200">√2/2</td><td class="px-3 py-4">√3/2</td>
+                                    </tr>
+                                    <tr class="border-b border-stone-200">
+                                        <td class="px-3 py-4 font-bold bg-stone-50 border-r border-stone-200">cos(α)</td>
+                                        <td class="px-3 py-4 border-r border-stone-200">√3/2</td><td class="px-3 py-4 border-r border-stone-200">√2/2</td><td class="px-3 py-4">1/2</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="px-3 py-4 font-bold bg-stone-50 border-r border-stone-200">tan(α)</td>
+                                        <td class="px-3 py-4 border-r border-stone-200">√3/3</td><td class="px-3 py-4 border-r border-stone-200">1</td><td class="px-3 py-4">√3</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Cilindro 3D -->
+                <div class="bg-stone-900 rounded-3xl overflow-hidden shadow-xl border border-stone-800 flex flex-col md:flex-row">
+                    <div class="w-full md:w-1/2 p-8 md:p-10 flex flex-col justify-center text-white">
+                        <h3 class="text-2xl font-bold mb-2 text-teal-400">Volumen 3D Dinámico</h3>
+                        <p class="text-stone-400 mb-8 text-sm">Comprende cómo los cambios en el radio afectan cuadráticamente al volumen de un cilindro (PAES M1).</p>
+                        
+                        <div class="space-y-6">
+                            <div>
+                                <div class="flex justify-between mb-2 text-sm font-bold"><span>Radio (r)</span> <span class="text-teal-300" id="val-r">3.0</span></div>
+                                <input type="range" id="slider-r" min="1" max="5" step="0.1" value="3" class="w-full h-2 bg-stone-700 rounded-lg appearance-none cursor-pointer accent-teal-500" oninput="app.updateGeometry()">
+                            </div>
+                            <div>
+                                <div class="flex justify-between mb-2 text-sm font-bold"><span>Altura (h)</span> <span class="text-teal-300" id="val-h">5.0</span></div>
+                                <input type="range" id="slider-h" min="2" max="8" step="0.1" value="5" class="w-full h-2 bg-stone-700 rounded-lg appearance-none cursor-pointer accent-teal-500" oninput="app.updateGeometry()">
+                            </div>
+                        </div>
+                        
+                        <div class="mt-8 bg-black/50 p-4 rounded-xl border border-stone-700 text-center font-mono">
+                            V = π · r² · h = <span id="val-v" class="text-teal-400 font-bold text-xl ml-1">141.37</span>
+                        </div>
+                    </div>
+                    <div class="w-full md:w-1/2 h-[350px] relative bg-stone-950" id="canvas-container-3d">
+                        <div class="absolute bottom-4 w-full text-center text-xs text-stone-500 animate-pulse pointer-events-none">&#x21BA; Arrastra para rotar la figura</div>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="bg-stone-900 text-stone-400 py-8 text-center text-sm mt-auto border-t border-stone-800">
+        <p class="font-bold text-stone-300 mb-1">MATHUP 2026</p>
+        <p>Plataforma inteligente de preparación PAES M1/M2.</p>
+    </footer>
+
+    <script>
+        // --- MEGA MOTOR GENERADOR DE PREGUNTAS (Algorítmico, Contextual y Anti-Repetición) ---
+        const QuestionEngine = {
+            generate(exam, topic, difficulty, count) {
+                let pool = [];
+                let availableGenerators = this.generators.filter(g => g.exam === exam);
+                
+                if (topic !== 'all') availableGenerators = availableGenerators.filter(g => g.topic === topic);
+                if (difficulty !== 'all') availableGenerators = availableGenerators.filter(g => g.difficulty === difficulty);
+                
+                // Fallback inteligente si la combinación de filtros devuelve vacío
+                if (availableGenerators.length === 0) {
+                    // Intenta rescatar respetando el Eje Temático y la Prueba, ignorando la dificultad
+                    let fallback = this.generators.filter(g => g.exam === exam && (topic === 'all' || g.topic === topic));
+                    if (fallback.length === 0) {
+                        fallback = this.generators.filter(g => g.exam === exam); // Último recurso: cualquier cosa de la prueba
+                    }
+                    availableGenerators = fallback;
+                }
+
+                // Ciclado de plantillas para evitar que la misma estructura salga muy seguido
+                availableGenerators.sort(() => Math.random() - 0.5);
+
+                for (let i = 0; i < count; i++) {
+                    const gen = availableGenerators[i % availableGenerators.length];
+                    let q = gen.generate();
+                    
+                    q.exam = gen.exam;
+                    q.topic = gen.topic;
+                    q.difficulty = gen.difficulty;
+                    
+                    // Manejo de Opciones
+                    const optionsObj = q.options.map((text, idx) => ({ text, isCorrect: idx === q.correct }));
+                    optionsObj.sort(() => Math.random() - 0.5);
+                    
+                    q.options = optionsObj.map((o, idx) => `${String.fromCharCode(65 + idx)}) ${o.text}`);
+                    q.correct = optionsObj.findIndex(o => o.isCorrect);
+                    
+                    pool.push(q);
+                }
+
+                return pool.sort(() => Math.random() - 0.5); // Desorden final
+            },
+
+            generators: [
+                // ------ M1: NÚMEROS ------
+                {
+                    exam: "M1", topic: "Números", difficulty: "Fácil",
+                    generate() {
+                        const base = (Math.floor(Math.random() * 8) + 2) * 5000;
+                        const dcto = (Math.floor(Math.random() * 4) + 1) * 10;
+                        const final = base * (1 - dcto/100);
+                        return {
+                            text: `CONTEXTO PAES: Una tienda de tecnología ofrece unos audífonos a un precio original de $${base.toLocaleString('es-CL')}. Por ser el "CyberDay", aplican un descuento del ${dcto}%. ¿Cuánto se debe pagar finalmente por los audífonos?`,
+                            options: [`$${final.toLocaleString('es-CL')}`, `$${(base - (dcto*100)).toLocaleString('es-CL')}`, `$${(base * (dcto/100)).toLocaleString('es-CL')}`, `$${(base - 1000).toLocaleString('es-CL')}`],
+                            correct: 0,
+                            explanation: `Calculamos el ${dcto}% de $${base}: $${base} · ${dcto/100} = $${base * (dcto/100)}. Luego restamos ese descuento al original: ${base} - ${base * (dcto/100)} = $${final}.`
+                        };
+                    }
+                },
+                {
+                    exam: "M1", topic: "Números", difficulty: "Medio",
+                    generate() {
+                        const total = (Math.floor(Math.random() * 5) + 3) * 100; // 300, 400...
+                        const den = Math.floor(Math.random() * 3) + 3; // 3, 4, 5
+                        const num = Math.floor(Math.random() * (den - 1)) + 1;
+                        const consumido = (total * num) / den;
+                        const restante = total - consumido;
+                        return {
+                            text: `CONTEXTO PAES: Un estanque de combustible tiene una capacidad total de ${total} litros. Para un viaje, un camión consume ${num}/${den} de la capacidad total del estanque. ¿Cuántos litros de combustible QUEDAN en el estanque?`,
+                            options: [`${restante} litros`, `${consumido} litros`, `${total / den} litros`, `${Math.abs(total - num)} litros`],
+                            correct: 0,
+                            explanation: `Primero calculamos cuánto se consumió: ${total} · (${num}/${den}) = ${consumido} litros. La pregunta pide lo que QUEDA, así que restamos: ${total} - ${consumido} = ${restante} litros.`
+                        };
+                    }
+                },
+                {
+                    exam: "M1", topic: "Números", difficulty: "Difícil",
+                    generate() {
+                        const p = (Math.floor(Math.random() * 5) + 2) * 10000;
+                        const iva = 19;
+                        const final = p * 1.19;
+                        return {
+                            text: `Una empresa cotiza un repuesto industrial. El valor NETO del repuesto (sin IVA) es $${p.toLocaleString('es-CL')}. Si el IVA en Chile es del 19%, ¿cuál es el valor BRUTO (total a pagar) del repuesto?`,
+                            options: [`$${final.toLocaleString('es-CL')}`, `$${(p + 1900).toLocaleString('es-CL')}`, `$${(p * 0.19).toLocaleString('es-CL')}`, `$${(p * 1.19 + 100).toLocaleString('es-CL')}`],
+                            correct: 0,
+                            explanation: `El valor bruto incluye el IVA. Podemos calcular el 19% y sumarlo, o simplemente multiplicar el valor neto por 1.19: $${p} · 1.19 = $${final}.`
+                        };
+                    }
+                },
+                {
+                    exam: "M1", topic: "Números", difficulty: "Fácil",
+                    generate() {
+                        const k = Math.floor(Math.random() * 4) + 2; 
+                        const cost = (Math.floor(Math.random() * 5) + 1) * 500;
+                        const req = k * (Math.floor(Math.random() * 3) + 2);
+                        const ans = (cost / k) * req;
+                        return {
+                            text: `En una verdulería, ${k} kg de tomates cuestan $${cost}. Asumiendo proporcionalidad directa, ¿cuánto costarán ${req} kg de los mismos tomates?`,
+                            options: [`$${ans}`, `$${cost * req}`, `$${ans + 500}`, `$${(cost/k) + req}`],
+                            correct: 0,
+                            explanation: `Armamos la proporción directa: ${k} kg / $${cost} = ${req} kg / X. Multiplicando cruzado y despejando X: X = (${cost} · ${req}) / ${k} = $${ans}.`
+                        };
+                    }
+                },
+
+                // ------ M1: ÁLGEBRA Y FUNCIONES ------
+                {
+                    exam: "M1", topic: "Álgebra y Funciones", difficulty: "Fácil",
+                    generate() {
+                        const a = Math.floor(Math.random() * 5) + 2;
+                        const b = Math.floor(Math.random() * 10) + 1;
+                        const ans = Math.floor(Math.random() * 8) + 2;
+                        const res = (a * ans) + b;
+                        return {
+                            text: `Resuelve la siguiente ecuación de primer grado: ${a}x + ${b} = ${res}`,
+                            options: [`x = ${ans}`, `x = ${ans + 1}`, `x = ${ans - 1}`, `x = ${b}`],
+                            correct: 0,
+                            explanation: `Despejamos x. Restamos ${b} a ambos lados: ${a}x = ${res} - ${b} => ${a}x = ${res-b}. Dividimos por ${a}: x = ${res-b} / ${a} = ${ans}.`
+                        };
+                    }
+                },
+                {
+                    exam: "M1", topic: "Álgebra y Funciones", difficulty: "Medio",
+                    generate() {
+                        const base = (Math.floor(Math.random() * 3) + 1) * 500;
+                        const x = Math.floor(Math.random() * 5) + 3;
+                        const variable = (Math.floor(Math.random() * 4) + 1) * 100;
+                        const total = base + (variable * x);
+                        return {
+                            text: `CONTEXTO PAES: Una empresa de taxis cobra un cargo fijo de $${base} por subirse al vehículo, más $${variable} por cada kilómetro recorrido. Si un pasajero pagó en total $${total}, ¿cuántos kilómetros recorrió?`,
+                            options: [`${x} km`, `${x + 2} km`, `${x - 1} km`, `${Math.floor(total/variable)} km`],
+                            correct: 0,
+                            explanation: `Modelamos la función de cobro: C(x) = ${base} + ${variable}x. Sabemos que C(x) = ${total}, entonces: ${total} = ${base} + ${variable}x. Restamos el cargo fijo: ${total - base} = ${variable}x. Dividimos: x = ${total - base} / ${variable} = ${x} km.`
+                        };
+                    }
+                },
+                {
+                    exam: "M1", topic: "Álgebra y Funciones", difficulty: "Difícil",
+                    generate() {
+                        const p = Math.floor(Math.random() * 4) + 2; // precio cuad
+                        const l = Math.floor(Math.random() * 3) + 1; // precio lapiz
+                        const qP = Math.floor(Math.random() * 3) + 2; // cant cuad
+                        const qL = Math.floor(Math.random() * 4) + 2; // cant lapiz
+                        const total = (p * qP) + (l * qL);
+                        return {
+                            text: `CONTEXTO PAES: En una librería, ${qP} cuadernos y ${qL} lápices cuestan en total $${total} mil. Si se sabe que el precio de un cuaderno es de $${p} mil, ¿cuál es el precio de un lápiz?`,
+                            options: [`$${l} mil`, `$${l + 1} mil`, `$${p} mil`, `$${total - p} mil`],
+                            correct: 0,
+                            explanation: `Planteamos la ecuación con variables: ${qP}C + ${qL}L = ${total}. Sabemos que C = ${p}. Reemplazamos: ${qP}(${p}) + ${qL}L = ${total} => ${qP*p} + ${qL}L = ${total}. Despejamos L: ${qL}L = ${total - (qP*p)} => L = ${total - (qP*p)} / ${qL} = ${l}.`
+                        };
+                    }
+                },
+
+                // ------ M1: GEOMETRÍA ------
+                {
+                    exam: "M1", topic: "Geometría", difficulty: "Fácil",
+                    generate() {
+                        const side = Math.floor(Math.random() * 6) + 3;
+                        const p = side * 4;
+                        const a = side * side;
+                        return {
+                            text: `Si el perímetro de un cuadrado es ${p} cm, ¿cuál es su área?`,
+                            options: [`${a} cm²`, `${p} cm²`, `${side} cm²`, `${a * 2} cm²`],
+                            correct: 0,
+                            svg: `<svg viewBox="0 0 100 100"><rect x="25" y="25" width="50" height="50" fill="rgba(20, 184, 166, 0.1)" stroke="#0f766e" stroke-width="2"/><text x="50" y="20" font-size="8" text-anchor="middle">L = ?</text><text x="50" y="55" font-size="8" text-anchor="middle" font-weight="bold">Área = ?</text></svg>`,
+                            explanation: `El perímetro de un cuadrado es 4 veces su lado (4L). Si 4L = ${p}, entonces L = ${side} cm. El área es L², por lo tanto, ${side}² = ${a} cm².`
+                        };
+                    }
+                },
+                {
+                    exam: "M1", topic: "Geometría", difficulty: "Medio",
+                    generate() {
+                        const triples = [[3,4,5], [6,8,10], [5,12,13]];
+                        const t = triples[Math.floor(Math.random() * triples.length)];
+                        return {
+                            text: `En un triángulo rectángulo, los catetos miden ${t[0]} cm y ${t[1]} cm. ¿Cuál es el valor de la hipotenusa?`,
+                            options: [`${t[2]} cm`, `${t[0]+t[1]} cm`, `${t[2]*2} cm`, `${t[2]*t[2]} cm`],
+                            correct: 0,
+                            svg: `<svg viewBox="0 0 100 100"><polygon points="20,80 80,80 20,40" fill="rgba(251, 191, 36, 0.2)" stroke="#d97706" stroke-width="2"/><rect x="20" y="70" width="10" height="10" fill="none" stroke="#d97706"/><text x="50" y="92" font-size="8">Cateto = ${t[1]}</text><text x="8" y="60" font-size="8" transform="rotate(-90 8,60)">Cateto = ${t[0]}</text><text x="55" y="55" font-size="10" fill="red" font-weight="bold">x</text></svg>`,
+                            explanation: `Aplicamos el Teorema de Pitágoras: a² + b² = c². Entonces, ${t[0]}² + ${t[1]}² = c² => ${t[0]*t[0]} + ${t[1]*t[1]} = ${t[2]*t[2]}. La raíz es ${t[2]}.`
+                        };
+                    }
+                },
+                {
+                    exam: "M1", topic: "Geometría", difficulty: "Difícil",
+                    generate() {
+                        const hArbol = Math.floor(Math.random() * 4) + 4; // 4 a 7
+                        const sArbol = hArbol * 2; // Sombra doble
+                        const hPersona = 1.5;
+                        const sPersona = hPersona * 2;
+                        return {
+                            text: `CONTEXTO PAES: A cierta hora del día, un árbol de ${hArbol} metros de altura proyecta una sombra de ${sArbol} metros. A la misma hora, una persona proyecta una sombra de ${sPersona} metros. Usando semejanza de triángulos, ¿cuál es la altura de la persona?`,
+                            options: [`${hPersona} m`, `1.8 m`, `2.0 m`, `${hPersona + 1} m`],
+                            correct: 0,
+                            svg: `<svg viewBox="0 0 150 100"><polygon points="10,90 90,90 10,20" fill="none" stroke="black" stroke-dasharray="4"/><polygon points="100,90 140,90 100,50" fill="none" stroke="gray" stroke-dasharray="4"/><text x="50" y="98" font-size="7">S = ${sArbol}m</text><text x="5" y="55" font-size="7" transform="rotate(-90 5,55)">H = ${hArbol}m</text><text x="120" y="98" font-size="7">S = ${sPersona}m</text><text x="95" y="70" font-size="7" transform="rotate(-90 95,70)">h = ?</text></svg>`,
+                            explanation: `Por semejanza (Teorema de Thales), la razón entre la altura y la sombra es constante: ${hArbol} / ${sArbol} = h / ${sPersona}. Despejando h: h = (${hArbol} * ${sPersona}) / ${sArbol} = ${hPersona} m.`
+                        };
+                    }
+                },
+
+                // ------ M1: PROBABILIDAD Y ESTADÍSTICA ------
+                {
+                    exam: "M1", topic: "Probabilidad y Estadística", difficulty: "Fácil",
+                    generate() {
+                        const n1 = Math.floor(Math.random() * 3) + 4; 
+                        const n2 = Math.floor(Math.random() * 3) + 4;
+                        const n3 = Math.floor(Math.random() * 3) + 4;
+                        const sum = n1 + n2 + n3;
+                        const avg = (sum / 3).toFixed(1);
+                        return {
+                            text: `Un estudiante tiene las siguientes notas: ${n1}.0, ${n2}.0 y ${n3}.0. ¿Cuál es su promedio?`,
+                            options: [`${avg}`, `${(parseFloat(avg)+0.5).toFixed(1)}`, `${(parseFloat(avg)-0.2).toFixed(1)}`, `${n2}.0`],
+                            correct: 0,
+                            explanation: `El promedio es la suma de los datos dividida por la cantidad total: (${n1} + ${n2} + ${n3}) / 3 = ${sum} / 3 = ${avg}.`
+                        };
+                    }
+                },
+                {
+                    exam: "M1", topic: "Probabilidad y Estadística", difficulty: "Medio",
+                    generate() {
+                        const rojas = Math.floor(Math.random() * 4) + 2;
+                        const verdes = Math.floor(Math.random() * 4) + 2;
+                        const azules = Math.floor(Math.random() * 3) + 1;
+                        const total = rojas + verdes + azules;
+                        return {
+                            text: `En una caja hay ${rojas} bolitas rojas, ${verdes} verdes y ${azules} azules. Si se extrae una al azar, ¿cuál es la probabilidad de que NO sea roja?`,
+                            options: [`${verdes + azules}/${total}`, `${rojas}/${total}`, `${verdes}/${total}`, `1/${total}`],
+                            correct: 0,
+                            explanation: `Casos posibles: ${total} bolitas en total. Casos favorables (no rojas): verdes (${verdes}) + azules (${azules}) = ${verdes + azules}. La probabilidad por Laplace es Casos Favorables / Posibles = ${verdes + azules}/${total}.`
+                        };
+                    }
+                },
+
+                // ------ NUEVAS PLANTILLAS DE RELLENO M2 (Evita que se tranque la dificultad) ------
+                {
+                    exam: "M2", topic: "Probabilidad y Estadística", difficulty: "Fácil",
+                    generate() {
+                        const casos = Math.floor(Math.random() * 5) + 3;
+                        return {
+                            text: `Si se lanza un dado especial de ${casos * 2} caras numeradas correlativamente, ¿cuál es la probabilidad de que salga un número par?`,
+                            options: [`1/2`, `1/${casos}`, `2/${casos * 2}`, `No se puede determinar`],
+                            correct: 0,
+                            explanation: `La mitad de los números en un dado correlativo de caras pares son pares. Casos favorables: ${casos}, Casos totales: ${casos*2}. Por Laplace, ${casos}/${casos*2} = 1/2.`
+                        };
+                    }
+                },
+                {
+                    exam: "M2", topic: "Geometría", difficulty: "Fácil",
+                    generate() {
+                        const r = Math.floor(Math.random() * 5) + 2;
+                        return {
+                            text: `En el espacio 3D de M2, ¿cómo se expresa analíticamente el volumen de un cilindro recto cuyo radio basal es ${r} y su altura es h?`,
+                            options: [`π · ${r*r} · h`, `2 · π · ${r} · h`, `π · ${r} · h²`, `(π · ${r*r} · h) / 3`],
+                            correct: 0,
+                            explanation: `El volumen de un cilindro es Área de la base por altura. Base circular: π·r². Si r=${r}, el área basal es π·${r*r}. Volumen = π·${r*r}·h.`
+                        };
+                    }
+                },
+                {
+                    exam: "M2", topic: "Álgebra y Funciones", difficulty: "Medio",
+                    generate() {
+                        const val = Math.floor(Math.random() * 10) + 5;
+                        return {
+                            text: `Considerando una inecuación lineal del tipo 2x > ${val * 2}, el intervalo solución corresponde a los números reales que cumplen con:`,
+                            options: [`x > ${val}`, `x < ${val}`, `x ≥ ${val}`, `x > ${val * 2}`],
+                            correct: 0,
+                            explanation: `Despejamos x de la inecuación 2x > ${val*2}. Dividimos ambos lados por un positivo (2), la desigualdad se mantiene: x > ${val*2}/2 => x > ${val}.`
+                        };
+                    }
+                },
+
+                // ------ M2: (Profundización) ORIGINALES ------
+                {
+                    exam: "M2", topic: "Álgebra y Funciones", difficulty: "Difícil",
+                    generate() {
+                        const r1 = Math.floor(Math.random() * 4) + 1;
+                        const r2 = Math.floor(Math.random() * 3) + 2;
+                        const sum = r1 + r2;
+                        const prod = r1 * r2;
+                        return {
+                            text: `Dada la función cuadrática f(x) = x² - ${sum}x + ${prod}. ¿Cuáles son los puntos donde la parábola interseca al eje X (sus raíces)?`,
+                            options: [`x = ${r1} y x = ${r2}`, `x = -${r1} y x = -${r2}`, `x = ${sum} y x = ${prod}`, `No interseca el eje X`],
+                            correct: 0,
+                            svg: `<svg viewBox="0 0 100 100"><line x1="10" y1="80" x2="90" y2="80" stroke="black" stroke-width="1"/><line x1="50" y1="10" x2="50" y2="90" stroke="black" stroke-width="1"/><path d="M 20,20 Q 50,120 80,20" fill="none" stroke="teal" stroke-width="2"/><circle cx="35" cy="80" r="2" fill="red"/><circle cx="65" cy="80" r="2" fill="red"/></svg>`,
+                            explanation: `Las intersecciones con el eje X ocurren cuando f(x) = 0. Al factorizar x² - ${sum}x + ${prod} = 0, buscamos dos números que sumados den -${sum} y multiplicados den ${prod}. Esos son -${r1} y -${r2}. Así, (x - ${r1})(x - ${r2}) = 0. Las raíces son x=${r1} y x=${r2}.`
+                        };
+                    }
+                },
+                {
+                    exam: "M2", topic: "Números", difficulty: "Difícil",
+                    generate() {
+                        const arg1 = 100;
+                        const arg2 = 10;
+                        const ans = 2 - 1; // log(100) - log(10)
+                        return {
+                            text: `Aplicando propiedades de logaritmos base 10, ¿cuál es el valor de: log(${arg1}) - log(${arg2})?`,
+                            options: [`1`, `2`, `10`, `90`],
+                            correct: 0,
+                            explanation: `Por propiedad de la resta de logaritmos con igual base: log(A) - log(B) = log(A/B). Entonces log(100) - log(10) = log(100/10) = log(10). Como la base es 10, log_10(10) = 1. (O bien: log(100)=2, log(10)=1 => 2-1=1).`
+                        };
+                    }
+                }
+            ]
+        };
+
+        // --- APLICACIÓN PRINCIPAL ---
+        const app = {
+            currentView: 'home',
+            
+            // Estado Premium
+            isPremium: false,
+            allowedEmails: ['alumno@mathup.cl', 'prueba@gmail.com'], 
+            loggedEmail: '',
+            pendingTargetView: 'practica',
+
+            // Estado Simulador
+            selectedExam: null,
+            selectedDifficulty: 'all',
+            quizQuestions: [],
+            currentQIndex: 0,
+            userAnswers: {},
+            
+            // Perfil Stats
+            userStats: { solved: 0, correct: 0, timeSeconds: 0 },
+
+            init() {
+                this.renderChart();
+                this.initVisualizers();
+                
+                // Cronómetro silencioso
+                setInterval(() => {
+                    if (this.isPremium) {
+                        this.userStats.timeSeconds++;
+                        this.updateProfileTimeUI();
+                    }
+                }, 1000);
+            },
+
+            renderChart() {
+                const canvas = document.getElementById('m1DistributionChart');
+                if(!canvas) return;
+                const ctx = canvas.getContext('2d');
+                
+                Chart.defaults.font.family = 'Inter';
+                new Chart(ctx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['Números', 'Álgebra', 'Geometría', 'Probabilidad'],
+                        datasets: [{
+                            data: [18, 36, 24, 22],
+                            backgroundColor: ['#14b8a6', '#0f766e', '#fbbf24', '#f59e0b'],
+                            borderWidth: 0,
+                            hoverOffset: 4
+                        }]
+                    },
+                    options: { responsive: true, maintainAspectRatio: false, cutout: '70%', plugins: { legend: { display: false } } }
+                });
+            },
+
+            navigate(viewId) {
+                if ((viewId === 'practica' || viewId === 'perfil') && !this.isPremium) {
+                    this.openLoginModal();
+                    return;
+                }
+
+                // Ocultar y remover clase de animación para poder reiniciarla
+                document.querySelectorAll('.view-section').forEach(el => {
+                    el.classList.add('hidden');
+                    el.classList.remove('fade-in');
+                });
+                
+                document.querySelectorAll('.nav-btn').forEach(btn => {
+                    btn.classList.remove('text-teal-700', 'bg-teal-50');
+                    btn.classList.add('text-stone-500');
+                });
+
+                const target = document.getElementById(`view-${viewId}`);
+                target.classList.remove('hidden');
+                
+                // Forzar un "reflow" en el navegador para que la animación CSS se reinicie
+                void target.offsetWidth; 
+                target.classList.add('fade-in');
+                
+                const activeBtn = document.getElementById(`nav-${viewId}`);
+                if(activeBtn) {
+                    activeBtn.classList.remove('text-stone-500');
+                    activeBtn.classList.add('text-teal-700', 'bg-teal-50');
+                }
+
+                if (viewId === 'visualizador') {
+                    // Fix para que el Canvas 3D tome dimensiones correctas si estaba display:none
+                    setTimeout(() => app.updateGeometry(), 50); 
+                }
+            },
+
+            // --- LOGIN PREMIUM ---
+            checkPremiumAccess(targetView = 'practica') {
+                this.pendingTargetView = targetView;
+                if (this.isPremium) this.navigate(targetView);
+                else this.openLoginModal();
+            },
+            openLoginModal() { document.getElementById('login-modal').classList.remove('hidden'); },
+            closeLoginModal() { document.getElementById('login-modal').classList.add('hidden'); document.getElementById('login-error').classList.add('hidden'); },
+            verifyEmail() {
+                const email = document.getElementById('login-email').value.trim().toLowerCase();
+                if (this.allowedEmails.includes(email)) {
+                    this.isPremium = true;
+                    this.loggedEmail = email;
+                    this.closeLoginModal();
+                    
+                    document.getElementById('nav-practica').innerHTML = 'Práctica';
+                    document.getElementById('nav-perfil').classList.remove('hidden');
+                    this.updateProfileUI();
+                    this.navigate(this.pendingTargetView);
+                } else {
+                    document.getElementById('login-error').classList.remove('hidden');
+                }
+            },
+
+            // --- LÓGICA DEL SIMULADOR PAES ---
+            selectExam(examStr) {
+                this.selectedExam = examStr;
+                
+                const btnM1 = document.getElementById('btn-sel-m1');
+                const btnM2 = document.getElementById('btn-sel-m2');
+
+                // Limpieza visual completa
+                btnM1.classList.remove('border-teal-500', 'bg-teal-50');
+                btnM1.classList.add('border-stone-200', 'bg-stone-50');
+                btnM2.classList.remove('border-teal-500', 'bg-teal-50');
+                btnM2.classList.add('border-stone-200', 'bg-stone-50');
+
+                // Aplicación de color de selección
+                if (examStr === 'M1') {
+                    btnM1.classList.remove('border-stone-200', 'bg-stone-50');
+                    btnM1.classList.add('border-teal-500', 'bg-teal-50');
+                } else {
+                    btnM2.classList.remove('border-stone-200', 'bg-stone-50');
+                    btnM2.classList.add('border-teal-500', 'bg-teal-50');
+                }
+                
+                const difDiv = document.getElementById('practica-dificultad');
+                difDiv.classList.remove('hidden');
+                setTimeout(() => difDiv.classList.remove('opacity-0'), 50);
+            },
+            
+            selectDifficulty(diff) {
+                this.selectedDifficulty = diff;
+                document.querySelectorAll('.dif-btn').forEach(btn => btn.classList.remove('bg-teal-50', 'border-teal-500'));
+                
+                const idMap = {'all':'all', 'Fácil':'facil', 'Medio':'medio', 'Difícil':'dificil'};
+                document.getElementById(`btn-dif-${idMap[diff]}`).classList.add('bg-teal-50', 'border-teal-500');
+
+                const modDiv = document.getElementById('practica-modalidad');
+                modDiv.classList.remove('hidden');
+                setTimeout(() => modDiv.classList.remove('opacity-0'), 50);
+            },
+
+            startQuiz(topicMode) {
+                this.quizQuestions = QuestionEngine.generate(this.selectedExam, topicMode, this.selectedDifficulty, 20);
+                this.currentQIndex = 0;
+                this.userAnswers = {};
+
+                document.getElementById('practica-dashboard').classList.add('hidden');
+                document.getElementById('practica-results').classList.add('hidden');
+                document.getElementById('quiz-review-container').classList.add('hidden');
+                document.getElementById('practica-quiz').classList.remove('hidden');
+                
+                document.getElementById('quiz-header-title').innerText = `PAES ${this.selectedExam}`;
+                this.renderQuizQuestion();
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            },
+
+            renderQuizQuestion() {
+                const total = this.quizQuestions.length;
+                const current = this.currentQIndex;
+                const qData = this.quizQuestions[current];
+
+                document.getElementById('quiz-header-progress').innerText = `Hoja ${current + 1} de ${total}`;
+                document.getElementById('quiz-progress-bar').style.width = `${((current + 1) / total) * 100}%`;
+                
+                const badge = document.getElementById('quiz-difficulty-badge');
+                badge.innerText = qData.difficulty || 'Mixto';
+                badge.className = `inline-block text-xs font-bold px-2 py-1 rounded ${qData.difficulty === 'Fácil' ? 'bg-green-100 text-green-800' : qData.difficulty === 'Medio' ? 'bg-amber-100 text-amber-800' : 'bg-red-100 text-red-800'}`;
+
+                let optionsHtml = qData.options.map((opt, idx) => {
+                    const isChecked = this.userAnswers[current] === idx ? 'checked' : '';
+                    const bgClass = isChecked ? 'bg-teal-50 border-teal-500' : 'bg-white border-stone-200 hover:bg-stone-50';
+                    return `
+                    <label class="flex items-start p-4 border-2 rounded-xl cursor-pointer transition-all mb-3 option-label ${bgClass}" onclick="app.selectQuizOption(${current}, ${idx}, this)">
+                        <input type="radio" name="quiz-opt" value="${idx}" class="mt-1 h-5 w-5 text-teal-600 focus:ring-teal-500 border-stone-300" ${isChecked}>
+                        <span class="ml-4 text-stone-800 text-lg font-medium">${opt}</span>
+                    </label>`;
+                }).join('');
+
+                const svgHtml = qData.svg ? `<div class="math-svg-container my-6 p-4 bg-stone-50 rounded-xl border border-stone-200">${qData.svg}</div>` : '';
+
+                document.getElementById('quiz-question-container').innerHTML = `
+                    <div class="mb-3"><span class="bg-stone-100 text-stone-600 text-xs font-bold px-3 py-1 rounded uppercase tracking-wider">${qData.topic}</span></div>
+                    <h3 class="text-xl md:text-2xl text-stone-900 font-bold mb-6 leading-relaxed">${qData.text}</h3>
+                    ${svgHtml}
+                    <div class="flex-grow">${optionsHtml}</div>
+                `;
+
+                document.getElementById('btn-quiz-prev').disabled = current === 0;
+                document.getElementById('btn-quiz-next').classList.toggle('hidden', current === total - 1);
+                document.getElementById('btn-quiz-finish').classList.toggle('hidden', current !== total - 1);
+            },
+
+            selectQuizOption(qIndex, optIndex, labelElement) {
+                this.userAnswers[qIndex] = optIndex;
+                const container = document.getElementById('quiz-question-container');
+                container.querySelectorAll('.option-label').forEach(lbl => {
+                    lbl.classList.remove('bg-teal-50', 'border-teal-500');
+                    lbl.classList.add('bg-white', 'border-stone-200');
+                    lbl.querySelector('input').checked = false;
+                });
+                labelElement.classList.remove('bg-white', 'border-stone-200');
+                labelElement.classList.add('bg-teal-50', 'border-teal-500');
+                labelElement.querySelector('input').checked = true;
+            },
+
+            nextQuestion() { if(this.currentQIndex < this.quizQuestions.length - 1) { this.currentQIndex++; this.renderQuizQuestion(); } },
+            prevQuestion() { if(this.currentQIndex > 0) { this.currentQIndex--; this.renderQuizQuestion(); } },
+
+            finishQuiz() {
+                let score = 0;
+                let answered = 0;
+                this.quizQuestions.forEach((q, idx) => {
+                    if (this.userAnswers[idx] !== undefined) {
+                        answered++;
+                        if (this.userAnswers[idx] === q.correct) score++;
+                    }
+                });
+
+                this.userStats.solved += answered;
+                this.userStats.correct += score;
+                this.updateProfileUI();
+
+                document.getElementById('practica-quiz').classList.add('hidden');
+                document.getElementById('practica-results').classList.remove('hidden');
+                document.getElementById('result-score-correct').innerText = score;
+                document.getElementById('result-score-wrong').innerText = this.quizQuestions.length - score;
+                
+                this.renderReview();
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            },
+
+            renderReview() {
+                const container = document.getElementById('quiz-review-container');
+                container.classList.remove('hidden');
+                let html = '<h3 class="text-2xl font-black text-stone-800 mb-6 border-b border-stone-200 pb-3">Revisión de la IA</h3>';
+
+                this.quizQuestions.forEach((q, idx) => {
+                    const userAns = this.userAnswers[idx];
+                    const isCorrect = userAns === q.correct;
+                    const isUnanswered = userAns === undefined;
+                    
+                    let statusIcon = isCorrect ? '<span class="text-teal-600">&#x2705; Correcto</span>' : isUnanswered ? '<span class="text-amber-500">&#x26A0; Omitida</span>' : '<span class="text-red-500">&#x274C; Incorrecto</span>';
+
+                    let optionsHtml = '<div class="space-y-2 mt-4">';
+                    q.options.forEach((opt, oIdx) => {
+                        let style = "p-3 rounded-xl border transition-colors flex justify-between ";
+                        if (oIdx === q.correct) style += "bg-teal-50 border-teal-500 text-teal-900 font-bold";
+                        else if (oIdx === userAns && !isCorrect) style += "bg-red-50 border-red-400 text-red-900 line-through opacity-70";
+                        else style += "bg-white border-stone-100 text-stone-500 opacity-60";
+                        optionsHtml += `<div class="${style}"><span>${opt}</span></div>`;
+                    });
+                    optionsHtml += '</div>';
+
+                    html += `
+                        <div class="bg-white p-6 rounded-2xl border border-stone-200 shadow-sm">
+                            <div class="flex justify-between mb-3"><span class="font-bold text-sm text-stone-500">Hoja ${idx + 1} - ${q.topic}</span><span class="font-bold text-sm">${statusIcon}</span></div>
+                            <p class="text-lg font-medium text-stone-800">${q.text}</p>
+                            ${q.svg ? `<div class="math-svg-container my-4 p-2 bg-stone-50 rounded">${q.svg}</div>` : ''}
+                            ${optionsHtml}
+                            <div class="mt-4 bg-stone-50 p-4 rounded-xl border border-stone-200">
+                                <span class="block text-xs text-stone-400 font-black mb-1 uppercase tracking-wider">Resolución Paso a Paso:</span>
+                                <p class="text-stone-700 text-sm leading-relaxed">${q.explanation}</p>
+                            </div>
+                        </div>
+                    `;
+                });
+                container.innerHTML = html;
+            },
+
+            exitQuiz() {
+                document.getElementById('practica-quiz').classList.add('hidden');
+                document.getElementById('practica-results').classList.add('hidden');
+                document.getElementById('practica-dashboard').classList.remove('hidden');
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            },
+
+            // --- PERFIL ---
+            updateProfileUI() {
+                document.getElementById('profile-email').innerText = this.loggedEmail;
+                document.getElementById('stat-solved').innerText = this.userStats.solved;
+                document.getElementById('stat-correct').innerText = this.userStats.correct;
+                document.getElementById('stat-accuracy').innerText = this.userStats.solved > 0 ? `${((this.userStats.correct / this.userStats.solved) * 100).toFixed(0)}%` : '0%';
+                this.updateProfileTimeUI();
+            },
+            updateProfileTimeUI() {
+                const t = this.userStats.timeSeconds;
+                const h = Math.floor(t / 3600);
+                const m = Math.floor((t % 3600) / 60);
+                const el = document.getElementById('stat-time');
+                if(el) el.innerText = (h > 0 ? `${h}h ` : '') + `${m}m`;
+            },
+
+            // --- LABORATORIO VISUAL (Cilindro 3D, Pitágoras, Fracciones) ---
+            initVisualizers() {
+                this.init3D();
+                this.updatePythagoras();
+                this.updateFraction();
+            },
+
+            updatePythagoras() {
+                const a = parseInt(document.getElementById('slider-cata').value);
+                const b = parseInt(document.getElementById('slider-catb').value);
+                document.getElementById('val-cata').innerText = a;
+                document.getElementById('val-catb').innerText = b;
+                
+                const c = Math.sqrt(a*a + b*b).toFixed(2);
+                document.getElementById('val-hyp').innerText = c;
+
+                const svg = document.getElementById('svg-triangle');
+                const maxVal = Math.max(a, b, 1); 
+                const scale = 90 / maxVal; 
+                const drawA = a * scale;
+                const drawB = b * scale;
+                
+                svg.innerHTML = `
+                    <polygon points="10,120 ${10+drawA},120 10,${120-drawB}" fill="rgba(20, 184, 166, 0.2)" stroke="#0f766e" stroke-width="3" stroke-linejoin="round"/>
+                    <rect x="10" y="${120-10}" width="10" height="10" fill="none" stroke="#0f766e" stroke-width="1.5"/>
+                    <text x="${10 + drawA/2}" y="135" font-size="10" font-weight="bold" fill="#57534e" text-anchor="middle">A = ${a}</text>
+                    <text x="-5" y="${120 - drawB/2}" font-size="10" font-weight="bold" fill="#57534e" text-anchor="middle" transform="rotate(-90, -5, ${120 - drawB/2})">B = ${b}</text>
+                    <text x="${15 + drawA/2}" y="${115 - drawB/2}" font-size="12" fill="#0f766e" font-weight="black">C ≈ ${c}</text>
+                `;
+            },
+
+            updateFraction() {
+                const num = parseInt(document.getElementById('slider-num').value);
+                const den = parseInt(document.getElementById('slider-den').value);
+                document.getElementById('frac-num').innerText = num;
+                document.getElementById('frac-den').innerText = den;
+                
+                const container = document.getElementById('fraction-blocks');
+                container.innerHTML = '';
+                const totalBlocks = Math.max(den, num);
+                
+                for(let i=0; i<totalBlocks; i++) {
+                    const block = document.createElement('div');
+                    block.className = `w-10 h-10 rounded-md border-2 transition-colors ${i < num ? 'bg-teal-500 border-teal-600 shadow-inner' : 'bg-stone-200 border-stone-300'}`;
+                    if (i > 0 && i % den === 0) {
+                        const divider = document.createElement('div');
+                        divider.className = "w-3"; 
+                        container.appendChild(divider);
+                    }
+                    container.appendChild(block);
+                }
+            },
+
+            // --- 3D Engine Setup ---
+            init3D() {
+                const container = document.getElementById('canvas-container-3d');
+                if(!container) return;
+
+                this.scene = new THREE.Scene();
+                this.camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 100);
+                this.camera.position.set(0, 5, 18);
+
+                this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+                this.renderer.setSize(container.clientWidth, container.clientHeight);
+                this.renderer.setPixelRatio(window.devicePixelRatio);
+                container.appendChild(this.renderer.domElement);
+
+                // Luz
+                const light1 = new THREE.PointLight(0xffffff, 1.2, 100);
+                light1.position.set(10, 15, 10);
+                this.scene.add(light1);
+                this.scene.add(new THREE.AmbientLight(0x404040, 1.5));
+
+                this.updateGeometry(); // Crea el cilindro inicial
+
+                // Interacción Mouse/Touch
+                let isDragging = false, prevPos = { x: 0, y: 0 };
+                const dom = this.renderer.domElement;
+                dom.style.cursor = 'grab';
+
+                const onDown = (e) => { isDragging = true; dom.style.cursor = 'grabbing'; prevPos = { x: e.touches ? e.touches[0].clientX : e.clientX, y: e.touches ? e.touches[0].clientY : e.clientY }; };
+                const onMove = (e) => {
+                    if (isDragging && this.cylinder) {
+                        e.preventDefault();
+                        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+                        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+                        this.cylinder.rotation.y += (clientX - prevPos.x) * 0.01;
+                        this.cylinder.rotation.x += (clientY - prevPos.y) * 0.01;
+                        prevPos = { x: clientX, y: clientY };
+                    }
+                };
+                const onUp = () => { isDragging = false; dom.style.cursor = 'grab'; };
+
+                dom.addEventListener('mousedown', onDown); dom.addEventListener('mousemove', onMove); window.addEventListener('mouseup', onUp);
+                dom.addEventListener('touchstart', onDown, {passive:false}); dom.addEventListener('touchmove', onMove, {passive:false}); window.addEventListener('touchend', onUp);
+
+                // Resize
+                window.addEventListener('resize', () => {
+                    if(container.clientWidth > 0 && this.camera) {
+                        this.camera.aspect = container.clientWidth / container.clientHeight;
+                        this.camera.updateProjectionMatrix();
+                        this.renderer.setSize(container.clientWidth, container.clientHeight);
+                    }
+                });
+
+                this.animate3D();
+            },
+
+            updateGeometry() {
+                const container = document.getElementById('canvas-container-3d');
+                if(container && container.clientWidth > 0 && this.camera && this.renderer) {
+                    this.camera.aspect = container.clientWidth / container.clientHeight;
+                    this.camera.updateProjectionMatrix();
+                    this.renderer.setSize(container.clientWidth, container.clientHeight);
+                }
+
+                const r = parseFloat(document.getElementById('slider-r')?.value || 3);
+                const h = parseFloat(document.getElementById('slider-h')?.value || 5);
+                
+                if(document.getElementById('val-r')) {
+                    document.getElementById('val-r').innerText = r.toFixed(1);
+                    document.getElementById('val-h').innerText = h.toFixed(1);
+                    document.getElementById('val-v').innerText = (Math.PI * Math.pow(r, 2) * h).toFixed(2);
+                }
+
+                if(this.scene) {
+                    let oldRotX = 0, oldRotY = 0;
+                    if(this.cylinder) {
+                        oldRotX = this.cylinder.rotation.x; oldRotY = this.cylinder.rotation.y;
+                        this.scene.remove(this.cylinder);
+                        this.cylinder.geometry.dispose();
+                        this.cylinder.material.dispose();
+                    }
+
+                    const geo = new THREE.CylinderGeometry(r, r, h, 32);
+                    const mat = new THREE.MeshPhongMaterial({ color: 0x14b8a6, transparent: true, opacity: 0.9, shininess: 100 });
+                    this.cylinder = new THREE.Mesh(geo, mat);
+                    
+                    const edges = new THREE.LineSegments(new THREE.EdgesGeometry(geo), new THREE.LineBasicMaterial({ color: 0xffffff, linewidth: 2, transparent: true, opacity: 0.5 }));
+                    this.cylinder.add(edges);
+
+                    this.cylinder.rotation.set(oldRotX, oldRotY, 0);
+                    this.scene.add(this.cylinder);
+                }
+            },
+
+            animate3D() {
+                requestAnimationFrame(() => this.animate3D());
+                if(this.cylinder) this.renderer.render(this.scene, this.camera);
+            }
+        };
+
+        window.onload = () => app.init();
+    </script>
+</body>
+</html>
